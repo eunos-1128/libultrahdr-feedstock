@@ -1,5 +1,13 @@
 @echo on
 
+@REM On conda-forge cross-compilation environments, CMAKE_CROSSCOMPILING is set to TRUE
+@REM by the injected toolchain file, which causes UHDR_ENABLE_INSTALL to be automatically
+@REM overridden to FALSE inside CMakeLists.txt. Explicitly setting it to FALSE here ensures
+@REM that the install targets remain enabled.
+if "%build_platform%" NEQ "%target_platform%" (
+    set "EXTRA_CMAKE_ARGS=-DCMAKE_CROSSCOMPILING=FALSE"
+)
+
 sed -i "s/if(NOT(MSVC OR XCODE))/if(NOT XCODE)/" CMakeLists.txt
 if %ERRORLEVEL% neq 0 exit /b 1
 
@@ -19,7 +27,8 @@ cmake -S . -B build -G Ninja ^
     -DUHDR_ENABLE_GLES=OFF ^
     -DUHDR_ENABLE_WERROR=OFF ^
     -DUHDR_WRITE_ISO=ON ^
-    -DUHDR_WRITE_XMP=OFF
+    -DUHDR_WRITE_XMP=OFF ^
+    %EXTRA_CMAKE_ARGS%
 if %ERRORLEVEL% neq 0 exit /b 1
 
 cmake --build build --parallel %CPU_COUNT%
